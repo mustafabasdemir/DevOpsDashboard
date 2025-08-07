@@ -62,7 +62,7 @@ function App() {
             name: "Veritabanı Sunucu",
             isOnline: false,
             active: false,
-            os: "Ubuntu 22.04",
+            os: "Windows Server 2022",
             architecture: "arm64",
             cpu: "Intel Core i5-9700K",
             memory: "4 GB",
