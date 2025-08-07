@@ -1,39 +1,85 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import serverImg from "./assets/server.png";
 
-const jobs = [
-  { name: "publish", label: "🚀 Yayınla" },
-  { name: "iis_reset", label: "🔄 IIS Reset" },
-  { name: "iis_site_start", label: "▶️ IIS Başlat" },
-  { name: "iis_site_stop", label: "⏸️ IIS Durdur" },
-  { name: "restart", label: "🔁 Sunucu Yeniden Başlat" },
-  { name: "shutdown", label: "🛑 Sunucu Kapat" },
-];
+// Tüm kullanılabilecek joblar burada tanımlı:
+const allJobs = {
+  common: [
+    { name: "publish", label: "🚀 Publish" },
+    { name: "iis_reset", label: "🔄 IIS Reset" },
+    { name: "iis_site_start", label: "▶️ Start IIS Site" },
+    { name: "iis_site_stop", label: "⏸️ Stop IIS Site" },
+    { name: "restart", label: "🔁 Restart Server" },
+    { name: "shutdown", label: "🛑 Shutdown Server" },
+    { name: "server_status", label: "ℹ️ Show Details" },
+  ],
+  databaseTest: [
+    { name: "db_test", label: "🧪 Database Test Transfer" },
+    { name: "db_backup", label: "🧪 Backup Database" },
+    { name: "restart", label: "🔁 Restart Server" },
+    { name: "shutdown", label: "🛑 Shutdown Server" },
+    { name: "server_status", label: "ℹ️ Show Details" },
+  ],
+};
 
-const servers = [
-  {
-    id: 1,
-    name: "Eğitim Sunucusu",
-    projectId: "61673797",
-    host: "http://localhost:3001",
-  },
-  {
-    id: 2,
-    name: "Video Sunucusu",
-    projectId: "12345678",
-    host: "http://localhost:3001",
-  },
-  {
-    id: 3,
-    name: "Veritabanı Sunucusu",
-    projectId: "87654321",
-    host: "http://localhost:3001",
-  },
-];
 
 function App() {
+  const [servers, setServers] = useState([]);
   const [loading, setLoading] = useState(null);
   const [logs, setLogs] = useState({});
+  const projectId = "61673797";
+
+  useEffect(() => {
+    const fetchServers = async () => {
+      try {
+        const response = await fetch(
+          `http://localhost:3001/servers?projectId=${projectId}`
+        );
+        const data = await response.json();
+
+        // API'den gelen sunuculara jobs yoksa common joblar atanıyor
+        const processedApiServers = data.map(server => ({
+          ...server,
+          jobs: server.jobs && server.jobs.length > 0 ? server.jobs : allJobs.common,
+        }));
+
+        // Örnek sunucular, farklı jobs atanmış
+        const exampleServers = [
+          {
+            id: 999001,
+            name: "Web Sunucusu  Test",
+            isOnline: true,
+            active: true,
+            os: "Windows Server 2019",
+            architecture: "x64",
+            cpu: "Xeon E5-2670",
+            memory: "4 GB",
+            projectId,
+            host: "http://localhost:3001",
+            jobs: allJobs.common, // Sadece ortak joblar
+          },
+          {
+            id: 999002,
+            name: "Veritabanı Sunucu",
+            isOnline: false,
+            active: false,
+            os: "Ubuntu 22.04",
+            architecture: "arm64",
+            cpu: "Intel Core i5-9700K",
+            memory: "4 GB",
+            projectId,
+            host: "http://localhost:3001",
+            jobs: [ ...allJobs.databaseTest], // Ek olarak db_test job'u
+          },
+        ];
+
+        setServers([...processedApiServers, ...exampleServers]);
+      } catch (err) {
+        console.error("Sunucular alınamadı:", err);
+      }
+    };
+
+    fetchServers();
+  }, [projectId]);
 
   const triggerJob = async (server, jobName) => {
     const key = `${server.id}-${jobName}`;
@@ -100,9 +146,8 @@ function App() {
       <div
         style={{
           display: "grid",
-          gap: "2rem",
-          gridTemplateColumns: "repeat(3, 1fr)", // Her satırda 3 kart
-          maxWidth: "1200px",
+          gap: "1rem",
+          gridTemplateColumns: "repeat(3, 1fr)",
           margin: "0 auto",
         }}
       >
@@ -126,11 +171,38 @@ function App() {
                 alt="Server"
                 style={{ width: 60, height: 60, objectFit: "contain" }}
               />
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  marginTop: "0.5rem",
+                  gap: "0.75rem",
+                  flexWrap: "wrap",
+                }}
+              >
+                <div
+                  style={{
+                    width: 12,
+                    height: 12,
+                    borderRadius: "50%",
+                    backgroundColor:
+                      server.isOnline && server.active ? "green" : "red",
+                  }}
+                  title={server.isOnline && server.active ? "Aktif" : "Pasif"}
+                />
+                <span style={{ fontSize: "0.85rem", color: "#555" }}>
+                  {server.os?.toUpperCase() || "OS bilinmiyor"} |{" "}
+                  {server.architecture || "Arch yok"}
+                </span>
+                <span style={{ fontSize: "0.85rem", color: "#555" }}>
+                  🧠 {server.cpu || "CPU yok"} | 💾 {server.memory || "RAM yok"}
+                </span>
+              </div>
               <h2
                 style={{
                   margin: 0,
                   fontWeight: "700",
-                  fontSize: "1.5rem",
+                  fontSize: "1.4rem",
                   color: "#34495e",
                 }}
               >
@@ -146,7 +218,8 @@ function App() {
                 marginTop: "1.5rem",
               }}
             >
-              {jobs.map((job) => {
+              {/* Sunucuya özel joblar */}
+              {server.jobs?.map((job) => {
                 const jobKey = `${server.id}-${job.name}`;
                 const isLoading = loading === jobKey;
                 return (
@@ -166,7 +239,8 @@ function App() {
                       boxShadow: isLoading
                         ? "none"
                         : "0 6px 12px rgba(41, 128, 185, 0.5)",
-                      transition: "background-color 0.3s ease, box-shadow 0.3s ease",
+                      transition:
+                        "background-color 0.3s ease, box-shadow 0.3s ease",
                       userSelect: "none",
                       fontWeight: "600",
                       textAlign: "center",
