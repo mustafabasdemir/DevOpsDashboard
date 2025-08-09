@@ -29,7 +29,31 @@ app.post('/trigger', async (req, res) => {
       }
     );
 
-    res.status(200).json({ status: 'Triggered', pipeline: response.data });
+    const pipelineData = response.data;
+    const pipelineId = pipelineData.id;
+
+
+
+    const jobsResponse  = await axios.get(
+      `https://gitlab.com/api/v4/projects/${projectId}/pipelines/${pipelineId}/jobs`,
+      {
+        headers: { "PRIVATE-TOKEN": 'glpat-0GpshY0KN2Clv38MdWUVI286MQp1OmhsMWJiCw.01.120co75ly' },
+      }
+    );
+
+    const jobs = jobsResponse.data;
+    const FirstJobId = jobs[0].id;
+    //console.log(FirstJobId);
+    const JobLogs = await WaitForJobLogs(projectId, FirstJobId, 'glpat-0GpshY0KN2Clv38MdWUVI286MQp1OmhsMWJiCw.01.120co75ly');
+
+    //console.log(JobLogs);
+      res.status(200).json({ 
+      status: 'Triggered', 
+      pipeline: pipelineData, 
+      logs: JobLogs 
+    });
+   
+
   } catch (err) {
     res.status(500).json({ error: err.response?.data || err.message });
   }
@@ -93,6 +117,33 @@ app.get('/servers', async (req, res) => {
   }
 });
 
+
+
+async function WaitForJobLogs(projectId, jobId, token) {
+  while (true) {
+    const jobStatusResp = await axios.get(
+      `https://gitlab.com/api/v4/projects/${projectId}/jobs/${jobId}`,
+      { headers: { "PRIVATE-TOKEN": token } }
+    );
+
+    const status = jobStatusResp.data.status;
+    //console.log(`Job durumu: ${status}`);
+
+    if (status === 'success' || status === 'failed') {
+      // Job bitmiş, logu kesin alabiliriz
+      const logsResp = await axios.get(
+        `https://gitlab.com/api/v4/projects/${projectId}/jobs/${jobId}/trace`,
+        { headers: { "PRIVATE-TOKEN": token } }
+      );
+      //console.log(`Job durumu: ${status}`);
+      return logsResp.data;
+      
+    }
+
+    //console.log(`Job durumu: ${status}`);
+    await new Promise(resolve => setTimeout(resolve, 1000)); // 3 sn bekle
+  }
+}
 
 app.listen(3001, () => {
   console.log('🚀 Backend listening on port 3001');

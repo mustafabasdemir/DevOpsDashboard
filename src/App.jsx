@@ -35,7 +35,7 @@ function App() {
           `http://localhost:3001/servers?projectId=${projectId}`
         );
         const data = await response.json();
-
+        console.log( "fdasdasdasda",data)
         // API'den gelen sunuculara jobs yoksa common joblar atanıyor
         const processedApiServers = data.map(server => ({
           ...server,
