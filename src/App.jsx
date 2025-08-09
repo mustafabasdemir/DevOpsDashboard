@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import serverImg from "./assets/server.png";
 
-// Tüm kullanılabilecek joblar burada tanımlı:
 const allJobs = {
   common: [
     { name: "publish", label: "🚀 Publish" },
@@ -21,11 +20,11 @@ const allJobs = {
   ],
 };
 
-
 function App() {
   const [servers, setServers] = useState([]);
   const [loading, setLoading] = useState(null);
   const [logs, setLogs] = useState({});
+  const [darkMode, setDarkMode] = useState(false);
   const projectId = "61673797";
 
   useEffect(() => {
@@ -35,18 +34,19 @@ function App() {
           `http://localhost:3001/servers?projectId=${projectId}`
         );
         const data = await response.json();
-        console.log( "fdasdasdasda",data)
-        // API'den gelen sunuculara jobs yoksa common joblar atanıyor
-        const processedApiServers = data.map(server => ({
+
+        const processedApiServers = data.map((server) => ({
           ...server,
-          jobs: server.jobs && server.jobs.length > 0 ? server.jobs : allJobs.common,
+          jobs:
+            server.jobs && server.jobs.length > 0
+              ? server.jobs
+              : allJobs.common,
         }));
 
-        // Örnek sunucular, farklı jobs atanmış
         const exampleServers = [
           {
             id: 999001,
-            name: "Web Sunucusu  Test",
+            name: "Web Sunucusu Test",
             isOnline: true,
             active: true,
             os: "Windows Server 2019",
@@ -55,7 +55,7 @@ function App() {
             memory: "4 GB",
             projectId,
             host: "http://localhost:3001",
-            jobs: allJobs.common, // Sadece ortak joblar
+            jobs: allJobs.common,
           },
           {
             id: 999002,
@@ -68,7 +68,7 @@ function App() {
             memory: "4 GB",
             projectId,
             host: "http://localhost:3001",
-            jobs: [ ...allJobs.databaseTest], // Ek olarak db_test job'u
+            jobs: [...allJobs.databaseTest],
           },
         ];
 
@@ -121,169 +121,121 @@ function App() {
   };
 
   return (
-    <div
-      style={{
-        padding: "1rem",
-        fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
-        background: "#f4f6f8",
-        minWidth: "98.5vw",
-        minHeight: "100vh",
-        boxSizing: "border-box",
-      }}
-    >
-      <h1
-        style={{
-          textAlign: "center",
-          marginBottom: "1.5rem",
-          color: "#2c3e50",
-          fontWeight: "700",
-          fontSize: "2rem",
-        }}
-      >
-        🛠️ DevOps Dashboard
-      </h1>
+  <div
+    className={`${
+      darkMode ? "bg-gray-900 text-gray-100" : "bg-gray-100 text-gray-800"
+    } w-full min-h-screen p-6 font-sans transition-colors duration-500`}
+  >
+      <div className="flex justify-between items-center mb-8 w-full mx-auto">
+        <h2 className="text-3xl font-extrabold">🛠️ DevOps Dashboard</h2>
+        <button
+          onClick={() => setDarkMode(!darkMode)}
+          className={`px-4 py-2 rounded-lg font-medium transition-colors duration-300 border
+      ${
+        darkMode
+          ? "bg-yellow-400 text-gray-900 border-yellow-500 hover:bg-yellow-500"
+          : "bg-white text-gray-900 border-gray-400 hover:bg-gray-100"
+      }
+    `}
+        >
+          {darkMode ? "🌞 Light Mode" : "🌙 Dark Mode"}
+        </button>
+      </div>
 
-      <div
-        style={{
-          display: "grid",
-          gap: "1rem",
-          gridTemplateColumns: "repeat(3, 1fr)",
-          margin: "0 auto",
-        }}
-      >
-        {servers.map((server) => (
-          <div
-            key={server.id}
-            style={{
-              background: "#fff",
-              borderRadius: "16px",
-              padding: "1.5rem 1.8rem 2rem 1.8rem",
-              boxShadow: "0 8px 24px rgba(0,0,0,0.1)",
-              display: "flex",
-              flexDirection: "column",
-              justifyContent: "space-between",
-              minHeight: "320px",
-            }}
-          >
-            <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
-              <img
-                src={serverImg}
-                alt="Server"
-                style={{ width: 60, height: 60, objectFit: "contain" }}
-              />
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  marginTop: "0.5rem",
-                  gap: "0.75rem",
-                  flexWrap: "wrap",
-                }}
-              >
-                <div
-                  style={{
-                    width: 12,
-                    height: 12,
-                    borderRadius: "50%",
-                    backgroundColor:
-                      server.isOnline && server.active ? "green" : "red",
-                  }}
-                  title={server.isOnline && server.active ? "Aktif" : "Pasif"}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 w-full mx-auto">
+        {servers.map((server) => {
+          const isLoading = (jobName) => loading === `${server.id}-${jobName}`;
+
+          return (
+            <div
+              key={server.id}
+              className={`rounded-2xl p-6 shadow-lg flex flex-col justify-between min-h-[320px] max-w-full transition-colors duration-300 ${
+                darkMode ? "bg-gray-800" : "bg-white"
+              }`}
+            >
+              <div className="flex items-center gap-4 mb-4">
+                <img
+                  src={serverImg}
+                  alt="Server"
+                  className="w-16 h-16 object-contain"
                 />
-                <span style={{ fontSize: "0.85rem", color: "#555" }}>
-                  {server.os?.toUpperCase() || "OS bilinmiyor"} |{" "}
-                  {server.architecture || "Arch yok"}
-                </span>
-                <span style={{ fontSize: "0.85rem", color: "#555" }}>
-                  🧠 {server.cpu || "CPU yok"} | 💾 {server.memory || "RAM yok"}
-                </span>
+                <div className="flex flex-col flex-grow">
+                  <div className="flex items-center gap-2 flex-wrap text-sm mb-1">
+                    <span
+                      title={
+                        server.isOnline && server.active ? "Aktif" : "Pasif"
+                      }
+                      className={`w-3 h-3 rounded-full ${
+                        server.isOnline && server.active
+                          ? "bg-green-500"
+                          : "bg-red-500"
+                      }`}
+                    />
+                    <span>
+                      {server.os?.toUpperCase() || "OS bilinmiyor"} |{" "}
+                      {server.architecture || "Arch yok"}
+                    </span>
+                  </div>
+                  <div className="text-sm opacity-80">
+                    🧠 {server.cpu || "CPU yok"} | 💾{" "}
+                    {server.memory || "RAM yok"}
+                  </div>
+                </div>
               </div>
-              <h2
-                style={{
-                  margin: 0,
-                  fontWeight: "700",
-                  fontSize: "1.4rem",
-                  color: "#34495e",
-                }}
+
+              <h2 className="text-xl font-bold mb-4">{server.name}</h2>
+              <div className="flex flex-wrap gap-3">
+                {server.jobs?.map((job) => {
+                  const loadingBtn = isLoading(job.name);
+                  return (
+                    <button
+                      key={`${server.id}-${job.name}`}
+                      disabled={loadingBtn}
+                      onClick={() => triggerJob(server, job.name)}
+                      className={`flex-1 min-w-[120px] py-2 px-3 rounded-xl font-semibold transition duration-300 border shadow-sm
+                        ${
+                          loadingBtn
+                            ? "bg-gray-500 text-gray-200 cursor-not-allowed border-gray-400"
+                            : "bg-gray-200 text-gray-800 border-gray-400 hover:bg-gray-300 hover:border-gray-500 hover:shadow-md"
+                        }
+                        ${
+                          darkMode
+                            ? "!bg-gray-700 !text-gray-100 !border-gray-500 hover:!bg-gray-600"
+                            : ""
+                        }
+                      `}
+                    >
+                      {job.label}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div
+                className={`mt-6 p-4 rounded-lg min-h-[80px] whitespace-pre-wrap font-semibold shadow-inner select-text transition-colors duration-300
+    ${
+      logs[server.id]?.startsWith("✅")
+        ? darkMode
+          ? "bg-green-900 text-green-100"
+          : "bg-green-100 text-green-800"
+        : logs[server.id]?.startsWith("❌")
+        ? darkMode
+          ? "bg-red-900 text-red-100"
+          : "bg-red-100 text-red-800"
+        : darkMode
+        ? "bg-gray-700 text-gray-100"
+        : "bg-gray-200 text-gray-700"
+    }
+  `}
               >
-                {server.name}
-              </h2>
-            </div>
-
-            <div
-              style={{
-                display: "flex",
-                flexWrap: "wrap",
-                gap: "12px",
-                marginTop: "1.5rem",
-              }}
-            >
-              {/* Sunucuya özel joblar */}
-              {server.jobs?.map((job) => {
-                const jobKey = `${server.id}-${job.name}`;
-                const isLoading = loading === jobKey;
-                return (
-                  <button
-                    key={jobKey}
-                    onClick={() => triggerJob(server, job.name)}
-                    disabled={isLoading}
-                    style={{
-                      flex: "1 1 45%",
-                      padding: "14px 0",
-                      fontSize: "16px",
-                      background: isLoading ? "#95a5a6" : "#2980b9",
-                      color: "#fff",
-                      border: "none",
-                      borderRadius: "12px",
-                      cursor: isLoading ? "not-allowed" : "pointer",
-                      boxShadow: isLoading
-                        ? "none"
-                        : "0 6px 12px rgba(41, 128, 185, 0.5)",
-                      transition:
-                        "background-color 0.3s ease, box-shadow 0.3s ease",
-                      userSelect: "none",
-                      fontWeight: "600",
-                      textAlign: "center",
-                    }}
-                    onMouseEnter={(e) => {
-                      if (!isLoading) e.currentTarget.style.background = "#1f618d";
-                    }}
-                    onMouseLeave={(e) => {
-                      if (!isLoading) e.currentTarget.style.background = "#2980b9";
-                    }}
-                  >
-                    {job.label}
-                  </button>
-                );
-              })}
-            </div>
-
-            <div
-              style={{
-                marginTop: "2rem",
-                background: "#ecf0f1",
-                padding: "14px 18px",
-                borderRadius: "12px",
-                minHeight: "80px",
-                whiteSpace: "pre-wrap",
-                fontSize: "14px",
-                color: logs[server.id]?.startsWith("✅")
-                  ? "#27ae60"
-                  : logs[server.id]?.startsWith("❌")
-                  ? "#c0392b"
-                  : "#34495e",
-                fontWeight: "600",
-                boxShadow: "inset 0 0 8px rgba(0,0,0,0.05)",
-                userSelect: "text",
-              }}
-            >
-              <strong>Durum:</strong>
-              <div style={{ marginTop: "8px" }}>
-                {logs[server.id] || "Henüz işlem yapılmadı."}
+                <strong>Durum:</strong>
+                <div className="mt-2">
+                  {logs[server.id] || "Henüz işlem yapılmadı."}
+                </div>
               </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
