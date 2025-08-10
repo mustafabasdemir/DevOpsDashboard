@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import serverImg from "./assets/server.png";
+import Modal from "./components/Modal";
 
 const allJobs = {
   common: [
@@ -25,6 +26,12 @@ function App() {
   const [loading, setLoading] = useState(null);
   const [logs, setLogs] = useState({});
   const [darkMode, setDarkMode] = useState(false);
+
+  //modal 
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalTitle, setModalTitle] = useState("");
+  const [modalContent, setModalContent] = useState("");
+
   const projectId = "61673797";
 
   useEffect(() => {
@@ -104,6 +111,13 @@ function App() {
             data.pipeline?.id || "Yok"
           }`,
         }));
+
+ if (jobName === "server_status") {
+          setModalTitle(`${server.name} - Detaylar`);
+          setModalContent(data.logs || "Log verisi bulunamadı.");
+          setModalOpen(true);
+        }
+
       } else {
         setLogs((prev) => ({
           ...prev,
@@ -237,6 +251,13 @@ function App() {
           );
         })}
       </div>
+      <Modal
+        isOpen={modalOpen}
+        onClose={() => setModalOpen(false)}
+        title={modalTitle}
+      >
+        {modalContent}
+      </Modal>
     </div>
   );
 }
