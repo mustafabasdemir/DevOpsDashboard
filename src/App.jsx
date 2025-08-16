@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import serverImg from "./assets/server.png";
 import Modal from "./components/Modal";
+import HistoryModal from "./components/HistoryModal";
 
 const allJobs = {
   common: [
@@ -31,6 +32,10 @@ function App() {
   const [modalOpen, setModalOpen] = useState(false);
   const [modalTitle, setModalTitle] = useState("");
   const [modalContent, setModalContent] = useState("");
+  // history modal  
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [historyLogs, setHistoryLogs] = useState("");
+
 
   const projectId = "61673797";
 
@@ -53,7 +58,7 @@ function App() {
         const exampleServers = [
           {
             id: 999001,
-            name: "Web Sunucusu Test",
+            name: "Web Server Test",
             isOnline: true,
             active: true,
             os: "Windows Server 2019",
@@ -66,7 +71,7 @@ function App() {
           },
           {
             id: 999002,
-            name: "Veritabanı Sunucu",
+            name: "Database Server",
             isOnline: false,
             active: false,
             os: "Windows Server 2022",
@@ -93,7 +98,7 @@ function App() {
     setLoading(key);
     setLogs((prev) => ({
       ...prev,
-      [server.id]: `⏳ ${jobName} tetikleniyor...`,
+      [server.id]: `⏳ ${jobName} Triggered...`,
     }));
 
     try {
@@ -107,9 +112,7 @@ function App() {
       if (res.ok) {
         setLogs((prev) => ({
           ...prev,
-          [server.id]: `✅ ${jobName} tetiklendi. Pipeline ID: ${
-            data.pipeline?.id || "Yok"
-          }`,
+          [server.id]: `✅ ${jobName} triggered.`,
         }));
 
  if (jobName === "server_status") {
@@ -134,6 +137,30 @@ function App() {
     setLoading(null);
   };
 
+const openHistory = async (server) => {
+  try {
+    // Bugünün tarihini al (dosya adı için)
+    const today = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
+
+    // Public/logs klasöründen oku
+    const res = await fetch(`/logs/${today}.log`);
+    if (!res.ok) {
+      throw new Error("Log dosyası bulunamadı.");
+    }
+
+    const data = await res.text();
+
+    setHistoryLogs(data);
+    setModalTitle(`${server.name} - History (${today})`);
+    setHistoryOpen(true);
+
+  } catch (err) {
+    setHistoryLogs("❌ İstek başarısız: " + err.message);
+    setModalTitle(`${server.name} - History`);
+    setHistoryOpen(true);
+  }
+};
+
   return (
   <div
     className={`${
@@ -141,7 +168,7 @@ function App() {
     } w-full min-h-screen p-6 font-sans transition-colors duration-500`}
   >
       <div className="flex justify-between items-center mb-8 w-full mx-auto">
-        <h2 className="text-3xl font-extrabold">🛠️ DevOps Dashboard</h2>
+        <h2 className="text-3xl font-extrabold">⚡ Pipeline & Server Dashboard</h2>
         <button
           onClick={() => setDarkMode(!darkMode)}
           className={`px-4 py-2 rounded-lg font-medium transition-colors duration-300 border
@@ -197,7 +224,22 @@ function App() {
                 </div>
               </div>
 
-              <h2 className="text-xl font-bold mb-4">{server.name}</h2>
+              <h2 className="text-xl font-bold mb-4 flex items-center justify-between">
+                {server.name}
+                <button
+                  onClick={() => openHistory(server)}
+                  className={`py-2 px-3 rounded-xl font-semibold transition duration-300 border shadow-sm
+                        ${
+                          darkMode
+                            ? "!bg-gray-700 !text-gray-100 !border-gray-500 hover:!bg-gray-600"
+                            : ""
+                        }
+                      `}
+                  title="Geçmiş Logları Görüntüle"
+                >
+                  📜
+                </button>
+              </h2>
               <div className="flex flex-wrap gap-3">
                 {server.jobs?.map((job) => {
                   const loadingBtn = isLoading(job.name);
@@ -227,24 +269,24 @@ function App() {
 
               <div
                 className={`mt-6 p-4 rounded-lg min-h-[80px] whitespace-pre-wrap font-semibold shadow-inner select-text transition-colors duration-300
-    ${
-      logs[server.id]?.startsWith("✅")
-        ? darkMode
-          ? "bg-green-900 text-green-100"
-          : "bg-green-100 text-green-800"
-        : logs[server.id]?.startsWith("❌")
-        ? darkMode
-          ? "bg-red-900 text-red-100"
-          : "bg-red-100 text-red-800"
-        : darkMode
-        ? "bg-gray-700 text-gray-100"
-        : "bg-gray-200 text-gray-700"
-    }
-  `}
+              ${
+                logs[server.id]?.startsWith("✅")
+                  ? darkMode
+                    ? "bg-green-900 text-green-100"
+                    : "bg-green-100 text-green-800"
+                  : logs[server.id]?.startsWith("❌")
+                  ? darkMode
+                    ? "bg-red-900 text-red-100"
+                    : "bg-red-100 text-red-800"
+                  : darkMode
+                  ? "bg-gray-700 text-gray-100"
+                  : "bg-gray-200 text-gray-700"
+              }
+            `}
               >
-                <strong>Durum:</strong>
+                <strong>Status:</strong>
                 <div className="mt-2">
-                  {logs[server.id] || "Henüz işlem yapılmadı."}
+                  {logs[server.id] || "No action has been taken yet."}
                 </div>
               </div>
             </div>
@@ -258,6 +300,12 @@ function App() {
       >
         {modalContent}
       </Modal>
+      <HistoryModal
+  isOpen={historyOpen}
+  onClose={() => setHistoryOpen(false)}
+  title={modalTitle}
+  logs={historyLogs}
+/>
     </div>
   );
 }
